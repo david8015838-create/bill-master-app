@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>分帳大師 - 智能分帳 APP</title>
+    <title>分帳大師 - 智能分帳助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <script type="importmap">
@@ -17,35 +17,162 @@
     </script>
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .step-gradient { background: linear-gradient(to tr, #2563eb, #4f46e5); }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
+        import React, { useState, useMemo } from 'react';
         import ReactDOM from 'react-dom/client';
-        import { Users, Receipt, ChevronRight, RotateCcw } from 'lucide-react';
+        import { Users, Receipt, ChevronRight, RotateCcw, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 
-        // --- 這裡就是你的 App.tsx 邏輯 ---
         const App = () => {
+            const [step, setStep] = useState(1); // 1: 人員, 2: 費用, 3: 結算
             const [participants, setParticipants] = useState([]);
+            const [newName, setNewName] = useState('');
+            const [expenses, setExpenses] = useState([]);
+
+            // --- 參與者管理 ---
+            const addParticipant = () => {
+                if (newName.trim()) {
+                    setParticipants([...participants, { id: Date.now(), name: newName.trim() }]);
+                    setNewName('');
+                }
+            };
+
+            // --- 費用計算邏輯 ---
+            const calculateSettlement = () => {
+                const balance = {};
+                participants.forEach(p => balance[p.name] = 0);
+                
+                expenses.forEach(exp => {
+                    const share = exp.amount / participants.length;
+                    participants.forEach(p => {
+                        if (p.name === exp.payer) balance[p.name] += (exp.amount - share);
+                        else balance[p.name] -= share;
+                    });
+                });
+
+                const debtors = [], creditors = [];
+                Object.keys(balance).forEach(name => {
+                    if (balance[name] > 0.01) creditors.push({ name, amount: balance[name] });
+                    else if (balance[name] < -0.01) debtors.push({ name, amount: Math.abs(balance[name]) });
+                });
+
+                const results = [];
+                let d = 0, c = 0;
+                while (d < debtors.length && c < creditors.length) {
+                    const pay = Math.min(debtors[d].amount, creditors[c].amount);
+                    results.push({ from: debtors[d].name, to: creditors[c].name, amount: pay.toFixed(0) });
+                    debtors[d].amount -= pay;
+                    creditors[c].amount -= pay;
+                    if (debtors[d].amount < 1) d++;
+                    if (creditors[c].amount < 1) c++;
+                }
+                return results;
+            };
+
+            const settlementResults = useMemo(() => calculateSettlement(), [participants, expenses]);
+
             return (
-                <div className="min-h-screen">
-                    <header className="bg-white border-b p-4">
-                        <h1 className="text-xl font-bold text-center">分帳大師</h1>
-                    </header>
-                    <main className="max-w-md mx-auto p-6 text-center mt-10">
-                        <div className="bg-white p-8 rounded-2xl shadow-sm border">
-                            <h2 className="text-2xl font-bold text-blue-600 mb-4">歡迎使用</h2>
-                            <p className="text-slate-500 mb-6">點擊下方按鈕開始智能分帳</p>
-                            <button 
-                                onClick={() => alert('App 已成功啟動！')}
-                                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors w-full"
-                            >
-                                立即開始
-                            </button>
+                <div className="min-h-screen pb-20">
+                    <header className="bg-white border-b sticky top-0 z-50 px-4 py-4 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 step-gradient rounded-lg flex items-center justify-center text-white font-bold">¥</div>
+                            <h1 className="font-bold text-lg">分帳大師</h1>
                         </div>
+                        <button onClick={() => window.location.reload()} className="p-2 text-slate-400 hover:text-blue-600">
+                            <RotateCcw size={20} />
+                        </button>
+                    </header>
+
+                    <main className="max-w-md mx-auto p-4">
+                        {/* 步驟指示器 */}
+                        <div className="flex justify-between mb-8 px-4">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step >= i ? 'step-gradient text-white' : 'bg-slate-200 text-slate-500'}`}>{i}</div>
+                            ))}
+                        </div>
+
+                        {step === 1 && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold flex items-center gap-2"><Users className="text-blue-600" /> 誰參與了這次活動？</h2>
+                                <div className="flex gap-2">
+                                    <input value={newName} onChange={e => setNewName(e.target.value)} onKeyPress={e => e.key === 'Enter' && addParticipant()} placeholder="輸入姓名..." className="flex-1 border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                    <button onClick={addParticipant} className="bg-blue-600 text-white p-2 rounded-xl"><Plus /></button>
+                                </div>
+                                <div className="bg-white rounded-2xl border shadow-sm divide-y">
+                                    {participants.map(p => (
+                                        <div key={p.id} className="p-4 flex justify-between items-center animate-in fade-in slide-in-from-top-2">
+                                            <span>{p.name}</span>
+                                            <button onClick={() => setParticipants(participants.filter(x => x.id !== p.id))} className="text-red-400"><Trash2 size={18}/></button>
+                                        </div>
+                                    ))}
+                                </div>
+                                {participants.length >= 2 && (
+                                    <button onClick={() => setStep(2)} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 flex items-center justify-center gap-2">下一步：輸入費用 <ChevronRight size={20}/></button>
+                                )}
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold flex items-center gap-2"><Receipt className="text-blue-600" /> 新增花費項目</h2>
+                                <div className="bg-white p-4 rounded-2xl border shadow-sm space-y-3">
+                                    <input id="expName" placeholder="花費內容 (例: 晚餐)" className="w-full border rounded-xl px-4 py-2" />
+                                    <input id="expAmount" type="number" placeholder="金額" className="w-full border rounded-xl px-4 py-2" />
+                                    <select id="expPayer" className="w-full border rounded-xl px-4 py-2 bg-white">
+                                        {participants.map(p => <option key={p.id} value={p.name}>{p.name} 付錢</option>)}
+                                    </select>
+                                    <button onClick={() => {
+                                        const name = document.getElementById('expName').value;
+                                        const amount = parseFloat(document.getElementById('expAmount').value);
+                                        const payer = document.getElementById('expPayer').value;
+                                        if (name && amount) {
+                                            setExpenses([...expenses, { id: Date.now(), name, amount, payer }]);
+                                            document.getElementById('expName').value = '';
+                                            document.getElementById('expAmount').value = '';
+                                        }
+                                    }} className="w-full bg-slate-800 text-white py-2 rounded-xl font-bold">+ 新增此筆</button>
+                                </div>
+                                <div className="space-y-2">
+                                    {expenses.map(e => (
+                                        <div key={e.id} className="bg-white p-3 rounded-xl border flex justify-between text-sm">
+                                            <span><strong>{e.payer}</strong> 支出了 {e.name}</span>
+                                            <span className="font-bold text-blue-600">${e.amount}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setStep(1)} className="flex-1 bg-slate-200 py-4 rounded-2xl font-bold">返回</button>
+                                    <button onClick={() => setStep(3)} className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200">看結果</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold flex items-center gap-2"><CheckCircle2 className="text-green-500" /> 結算結果</h2>
+                                <div className="bg-white rounded-2xl border shadow-sm p-6 space-y-4">
+                                    {settlementResults.length === 0 ? (
+                                        <p className="text-center text-slate-400">所有帳務已平分！</p>
+                                    ) : (
+                                        settlementResults.map((r, i) => (
+                                            <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
+                                                <span className="font-medium text-red-500">{r.from}</span>
+                                                <div className="flex-1 mx-4 border-t border-dashed border-slate-300 relative">
+                                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-2 text-xs font-bold text-slate-500">${r.amount}</span>
+                                                </div>
+                                                <span className="font-medium text-green-600">{r.to}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                <button onClick={() => window.location.reload()} className="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2"><RotateCcw size={18}/> 重新開始</button>
+                            </div>
+                        )}
                     </main>
                 </div>
             );
