@@ -1,86 +1,169 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>分帳大師</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>分帳大師 - 完整功能版</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .step-gradient { background: linear-gradient(to tr, #2563eb, #4f46e5); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body class="bg-slate-50 font-sans">
-    <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useMemo, useEffect } = React;
 
-        function App() {
+        const App = () => {
             const [step, setStep] = useState(1);
-            const [names, setNames] = useState([]);
-            const [inputName, setInputName] = useState('');
+            const [participants, setParticipants] = useState([]);
+            const [newName, setNewName] = useState('');
             const [expenses, setExpenses] = useState([]);
 
-            const addName = () => {
-                if (inputName) { setNames([...names, inputName]); setInputName(''); }
+            // 確保圖示正常顯示
+            useEffect(() => { if(window.lucide) lucide.createIcons(); }, [step, participants, expenses]);
+
+            const addParticipant = () => {
+                if (newName.trim()) {
+                    setParticipants([...participants, { id: Date.now(), name: newName.trim() }]);
+                    setNewName('');
+                }
             };
 
+            const calculateSettlement = () => {
+                const balance = {};
+                participants.forEach(p => balance[p.name] = 0);
+                expenses.forEach(exp => {
+                    const share = exp.amount / participants.length;
+                    participants.forEach(p => {
+                        if (p.name === exp.payer) balance[p.name] += (exp.amount - share);
+                        else balance[p.name] -= share;
+                    });
+                });
+                const debtors = [], creditors = [];
+                Object.keys(balance).forEach(name => {
+                    if (balance[name] > 0.1) creditors.push({ name, amount: balance[name] });
+                    else if (balance[name] < -0.1) debtors.push({ name, amount: Math.abs(balance[name]) });
+                });
+                const results = [];
+                let d = 0, c = 0;
+                while (d < debtors.length && c < creditors.length) {
+                    const pay = Math.min(debtors[d].amount, creditors[c].amount);
+                    results.push({ from: debtors[d].name, to: creditors[c].name, amount: pay.toFixed(0) });
+                    debtors[d].amount -= pay;
+                    creditors[c].amount -= pay;
+                    if (debtors[d].amount < 1) d++;
+                    if (creditors[c].amount < 1) c++;
+                }
+                return results;
+            };
+
+            const settlementResults = useMemo(() => calculateSettlement(), [participants, expenses]);
+
             return (
-                <div className="max-w-md mx-auto min-h-screen p-4">
-                    <div className="bg-white rounded-2xl shadow-xl p-6 mt-10">
-                        <h1 className="text-2xl font-bold mb-6 text-blue-600 text-center">分帳大師 🚀</h1>
-                        
+                <div className="min-h-screen pb-20">
+                    <header className="bg-white border-b p-4 flex justify-between items-center shadow-sm sticky top-0 z-50">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 step-gradient rounded-lg flex items-center justify-center text-white font-bold">¥</div>
+                            <h1 className="font-bold text-lg">分帳大師</h1>
+                        </div>
+                        <button onClick={() => window.location.reload()} className="text-slate-400"><i data-lucide="rotate-ccw"></i></button>
+                    </header>
+
+                    <main className="max-w-md mx-auto p-4">
+                        {/* 步驟指示條 */}
+                        <div className="flex justify-between mb-8 mt-4">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= i ? 'step-gradient text-white' : 'bg-slate-200 text-slate-500'}`}>{i}</div>
+                            ))}
+                        </div>
+
                         {step === 1 && (
-                            <div className="space-y-4">
-                                <p className="font-bold">第一步：誰要分帳？</p>
+                            <div className="space-y-4 animate-in fade-in duration-500">
+                                <h2 className="text-xl font-bold flex items-center gap-2">誰參與了這次活動？</h2>
                                 <div className="flex gap-2">
-                                    <input value={inputName} onChange={e => setInputName(e.target.value)} className="flex-1 border p-2 rounded-lg" placeholder="輸入姓名" />
-                                    <button onClick={addName} className="bg-blue-500 text-white px-4 py-2 rounded-lg">新增</button>
+                                    <input value={newName} onChange={e => setNewName(e.target.value)} onKeyPress={e => e.key === 'Enter' && addParticipant()} placeholder="輸入姓名..." className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2 focus:border-blue-500 outline-none" />
+                                    <button onClick={addParticipant} className="bg-blue-600 text-white px-4 rounded-xl font-bold">新增</button>
                                 </div>
-                                <div className="border-t pt-2">
-                                    {names.map((n, i) => <div key={i} className="py-1 border-b text-slate-600">{n}</div>)}
+                                <div className="bg-white rounded-2xl border shadow-sm divide-y">
+                                    {participants.map(p => (
+                                        <div key={p.id} className="p-4 flex justify-between items-center">
+                                            <span>{p.name}</span>
+                                            <button onClick={() => setParticipants(participants.filter(x => x.id !== p.id))} className="text-red-400">刪除</button>
+                                        </div>
+                                    ))}
                                 </div>
-                                {names.length > 1 && <button onClick={() => setStep(2)} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">下一步</button>}
+                                {participants.length >= 2 && (
+                                    <button onClick={() => setStep(2)} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg">下一步：輸入費用</button>
+                                )}
                             </div>
                         )}
 
                         {step === 2 && (
-                            <div className="space-y-4">
-                                <p className="font-bold">第二步：輸入費用</p>
-                                <input id="item" className="w-full border p-2 rounded-lg" placeholder="項目（如：晚餐）" />
-                                <input id="amount" type="number" className="w-full border p-2 rounded-lg" placeholder="金額" />
-                                <select id="payer" className="w-full border p-2 rounded-lg">
-                                    {names.map((n, i) => <option key={i} value={n}>{n} 付錢</option>)}
-                                </select>
-                                <button onClick={() => {
-                                    const item = document.getElementById('item').value;
-                                    const amount = document.getElementById('amount').value;
-                                    const payer = document.getElementById('payer').value;
-                                    if(item && amount) {
-                                        setExpenses([...expenses, { item, amount: parseFloat(amount), payer }]);
-                                        document.getElementById('item').value = '';
-                                        document.getElementById('amount').value = '';
-                                    }
-                                }} className="w-full bg-slate-800 text-white py-2 rounded-lg">新增此筆</button>
-                                <div className="text-sm text-slate-500 italic">已輸入 {expenses.length} 筆費用</div>
-                                <button onClick={() => setStep(3)} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mt-4">查看結算結果</button>
+                            <div className="space-y-4 animate-in fade-in duration-500">
+                                <h2 className="text-xl font-bold">新增費用</h2>
+                                <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
+                                    <input id="expName" placeholder="花費內容 (例: 晚餐)" className="w-full border rounded-xl px-4 py-3" />
+                                    <input id="expAmount" type="number" placeholder="金額" className="w-full border rounded-xl px-4 py-3" />
+                                    <select id="expPayer" className="w-full border rounded-xl px-4 py-3 bg-white">
+                                        {participants.map(p => <option key={p.id} value={p.name}>{p.name} 付錢</option>)}
+                                    </select>
+                                    <button onClick={() => {
+                                        const n = document.getElementById('expName');
+                                        const a = document.getElementById('expAmount');
+                                        const p = document.getElementById('expPayer');
+                                        if (n.value && a.value) {
+                                            setExpenses([...expenses, { id: Date.now(), name: n.value, amount: parseFloat(a.value), payer: p.value }]);
+                                            n.value = ''; a.value = '';
+                                        }
+                                    }} className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">+ 新增此筆項目</button>
+                                </div>
+                                <div className="space-y-2">
+                                    {expenses.map(e => (
+                                        <div key={e.id} className="bg-white p-3 rounded-xl border flex justify-between text-sm shadow-sm">
+                                            <span><strong>{e.payer}</strong> 付了 {e.name}</span>
+                                            <span className="font-bold text-blue-600">${e.amount}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex gap-3 pt-4">
+                                    <button onClick={() => setStep(1)} className="flex-1 bg-slate-200 py-4 rounded-2xl font-bold">返回</button>
+                                    <button onClick={() => setStep(3)} className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg">看結果</button>
+                                </div>
                             </div>
                         )}
 
                         {step === 3 && (
-                            <div className="space-y-4 text-center">
-                                <p className="font-bold text-lg">分帳計算完成！</p>
-                                <div className="p-4 bg-blue-50 rounded-xl">
-                                    <p className="text-slate-600">總支出：${expenses.reduce((a, b) => a + b.amount, 0)}</p>
-                                    <p className="text-slate-600 text-xs mt-2">（邏輯計算中...）</p>
+                            <div className="space-y-4 animate-in fade-in duration-500">
+                                <h2 className="text-xl font-bold">結算結果</h2>
+                                <div className="bg-white rounded-2xl border p-6 space-y-4 shadow-sm">
+                                    {settlementResults.length === 0 ? (
+                                        <p className="text-center text-slate-400 py-4">目前金額平分，不需要誰付給誰！</p>
+                                    ) : (
+                                        settlementResults.map((r, i) => (
+                                            <div key={i} className="flex justify-between items-center py-2 border-b last:border-0 text-lg">
+                                                <span className="text-red-500 font-bold">{r.from}</span>
+                                                <span className="text-slate-400 text-sm">應付給</span>
+                                                <span className="text-green-600 font-bold">{r.to}</span>
+                                                <span className="font-mono font-black">${r.amount}</span>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
-                                <button onClick={() => window.location.reload()} className="w-full bg-slate-200 py-3 rounded-xl">重新開始</button>
+                                <button onClick={() => window.location.reload()} className="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold">重新開始</button>
                             </div>
                         )}
-                    </div>
+                    </main>
                 </div>
             );
-        }
+        };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
