@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>結算專家 - 明細清單版</title>
+    <title>結算專家 5.0 - 最終明細版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-50 font-sans">
+    <div class="bg-violet-600 text-white text-[10px] text-center py-1 font-black tracking-widest uppercase">⚡️ Engine Version: 5.0 - Comprehensive Details Mode</div>
+    
     <div id="root"></div>
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -62,39 +64,41 @@
             const report = useMemo(calculate, [participants, expenses]);
 
             return (
-                <div className="max-w-md mx-auto min-h-screen p-4">
+                <div className="max-w-md mx-auto min-h-screen p-4 pb-20">
                     {step === 1 && (
                         <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border mt-10">
-                            <h2 className="text-2xl font-black mb-6 text-slate-800 tracking-tight">👥 建立成員</h2>
+                            <h2 className="text-2xl font-black mb-6 text-slate-800 tracking-tight flex items-center gap-2">
+                                <i data-lucide="users" class="text-violet-600"></i> 成員名單
+                            </h2>
                             <div className="flex gap-2 mb-6">
-                                <input value={newName} onChange={e => setNewName(e.target.value)} onKeyPress={e => e.key === 'Enter' && (newName && setParticipants([...participants,{id:Date.now(),name:newName}], setNewName('')))} className="flex-1 bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="姓名..." />
-                                <button onClick={() => {if(newName){setParticipants([...participants,{id:Date.now(),name:newName}]);setNewName('');}}} className="bg-indigo-600 text-white px-6 rounded-2xl font-bold transition-transform active:scale-95">新增</button>
+                                <input value={newName} onChange={e => setNewName(e.target.value)} onKeyPress={e => e.key === 'Enter' && (newName && setParticipants([...participants,{id:Date.now(),name:newName}], setNewName('')))} className="flex-1 bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-violet-500" placeholder="輸入姓名..." />
+                                <button onClick={() => {if(newName){setParticipants([...participants,{id:Date.now(),name:newName}]);setNewName('');}}} className="bg-violet-600 text-white px-6 rounded-2xl font-bold active:scale-95">新增</button>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                {participants.map(p => <div key={p.id} className="bg-slate-50 p-3 rounded-xl border flex justify-between font-bold text-slate-600"><span>{p.name}</span><button onClick={()=>setParticipants(participants.filter(x=>x.id!==p.id))} class="text-red-300 px-2">×</button></div>)}
+                                {participants.map(p => <div key={p.id} className="bg-slate-50 p-3 rounded-xl border flex justify-between font-bold text-slate-600"><span>{p.name}</span><button onClick={()=>setParticipants(participants.filter(x=>x.id!==p.id))} class="text-red-300">×</button></div>)}
                             </div>
-                            {participants.length >= 2 && <button onClick={()=>{setStep(2);setSelected(participants.map(p=>p.name))}} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold mt-8 shadow-lg transition-all active:scale-95">下一步：輸入帳目</button>}
+                            {participants.length >= 2 && <button onClick={()=>{setStep(2);setSelected(participants.map(p=>p.name))}} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold mt-8 shadow-lg active:scale-95">進入消費錄入</button>}
                         </div>
                     )}
 
                     {step === 2 && (
                         <div className="space-y-4 pt-6">
                             <div className="bg-white p-6 rounded-[2rem] shadow-xl border space-y-4">
-                                <h2 className="font-black text-xl text-slate-800 flex items-center gap-2">支出明細輸入</h2>
-                                <input id="n" placeholder="支出項目名稱" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none" />
-                                <input id="a" type="number" placeholder="支出總金額" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none" />
+                                <h2 className="font-black text-xl text-slate-800">✍️ 消費錄入 (含勾選分攤者)</h2>
+                                <input id="n" placeholder="項目名稱 (例如：午餐)" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none" />
+                                <input id="a" type="number" placeholder="總金額" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none" />
                                 
-                                <div class="text-[11px] font-black text-slate-400 ml-2 uppercase">付款人</div>
-                                <select id="p" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold text-indigo-600 appearance-none">
+                                <div class="text-[10px] font-bold text-slate-400 ml-2 uppercase tracking-widest">墊付人</div>
+                                <select id="p" className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold text-violet-600 appearance-none shadow-sm">
                                     {participants.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                                 </select>
 
-                                <div class="text-[11px] font-black text-slate-400 ml-2 uppercase">參與成員 (勾選)</div>
+                                <div class="text-[10px] font-bold text-slate-400 ml-2 uppercase tracking-widest">分攤夥伴 (勾選)</div>
                                 <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl border">
                                     {participants.map(p => (
-                                        <label key={p.id} className={`flex items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${selected.includes(p.name) ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-400 border-slate-100'}`}>
+                                        <label key={p.id} className={`flex items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${selected.includes(p.name) ? 'bg-violet-600 text-white border-violet-600 shadow-md' : 'bg-white text-slate-400 border-slate-100'}`}>
                                             <input type="checkbox" class="hidden" checked={selected.includes(p.name)} onChange={() => selected.includes(p.name)?setSelected(selected.filter(x=>x!==p.name)):setSelected([...selected,p.name])} />
-                                            <span class="font-bold">{p.name} {selected.includes(p.name) ? '✓' : ''}</span>
+                                            <span class="font-bold">{p.name}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -104,65 +108,60 @@
                                         setExpenses([...expenses,{id:Date.now(),name:n.value,amount:parseInt(a.value),payer:p.value,splitAmong:[...selected]}]);
                                         n.value=''; a.value=''; setSelected(participants.map(x=>x.name));
                                     }
-                                }} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-100">+ 加入帳單</button>
+                                }} className="w-full bg-violet-600 text-white py-4 rounded-2xl font-bold shadow-lg">+ 加入明細</button>
                             </div>
-                            {expenses.length > 0 && (
-                                <div className="space-y-2">
-                                    {expenses.map(e => <div key={e.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm border-l-4 border-l-indigo-500"><div><div class="font-bold text-slate-700">{e.name}</div><div class="text-[10px] text-slate-400">{e.payer} 付款</div></div><b class="text-indigo-600 font-black">${e.amount}</b></div>)}
-                                </div>
-                            )}
-                            <button onClick={()=>setStep(3)} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold shadow-2xl mt-4 transition-all active:scale-95">結算並產出報表</button>
+                            {expenses.map(e => <div key={e.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm"><div><div class="font-bold text-slate-700">{e.name}</div><div class="text-[10px] text-slate-400 font-bold">{e.payer} 代墊</div></div><b class="text-violet-600 font-black">${e.amount}</b></div>)}
+                            <button onClick={()=>setStep(3)} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold shadow-2xl mt-4 active:scale-95">查看專家結算明細</button>
                         </div>
                     )}
 
                     {step === 3 && (
-                        <div className="space-y-6 pt-6 pb-20">
-                            {/* 1. 撥款行動清單 */}
-                            <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border-t-8 border-t-indigo-600">
-                                <h2 className="text-center font-black text-xl text-slate-800 mb-6 flex flex-col items-center">
-                                    <span class="text-indigo-600 text-sm font-bold mb-1 underline">Settlement</span>
-                                    最終撥款行動
+                        <div className="space-y-6 pt-6">
+                            {/* 最終撥款行動 - 移至最上方 */}
+                            <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border-t-8 border-violet-600">
+                                <h2 className="text-center font-black text-xl text-slate-800 mb-6 flex items-center justify-center gap-2">
+                                    <i data-lucide="wallet" class="text-violet-600"></i> 最終撥款清單
                                 </h2>
                                 <div class="space-y-3">
                                     {report.plans.length === 0 ? (
-                                        <p className="text-center text-slate-400 py-6">無須轉帳，帳目平衡！</p>
+                                        <p className="text-center text-slate-400 py-6 italic font-medium">帳目平衡，無須轉帳！</p>
                                     ) : (
                                         report.plans.map((p,i) => (
-                                            <div key={i} className="bg-slate-900 p-5 rounded-3xl flex items-center justify-between text-white border-2 border-indigo-500/30">
-                                                <div class="text-center w-1/3"><div class="text-[9px] text-indigo-300 font-bold mb-1 uppercase tracking-widest">給錢</div><span class="font-black text-lg text-rose-400">{p.from}</span></div>
+                                            <div key={i} className="bg-slate-900 p-5 rounded-3xl flex items-center justify-between text-white">
+                                                <div class="text-center flex-1"><div class="text-[8px] text-violet-300 font-bold mb-1">付錢者</div><span class="font-bold text-rose-400">{p.from}</span></div>
                                                 <div class="flex flex-col items-center flex-1">
-                                                    <span class="bg-white text-slate-900 px-4 py-1.5 rounded-2xl font-black text-xl shadow-lg ring-4 ring-slate-800">${p.amount}</span>
-                                                    <i data-lucide="chevrons-right" class="w-4 h-4 text-indigo-400 mt-2"></i>
+                                                    <span class="bg-white text-slate-900 px-4 py-1.5 rounded-2xl font-black text-xl shadow-xl ring-2 ring-violet-500">${p.amount}</span>
+                                                    <i data-lucide="arrow-right" class="w-4 h-4 text-violet-400 mt-2"></i>
                                                 </div>
-                                                <div class="text-center w-1/3"><div class="text-[9px] text-indigo-300 font-bold mb-1 uppercase tracking-widest">收錢</div><span class="font-black text-lg text-emerald-400">{p.to}</span></div>
+                                                <div class="text-center flex-1"><div class="text-[8px] text-violet-300 font-bold mb-1">收錢者</div><span class="font-bold text-emerald-400">{p.to}</span></div>
                                             </div>
                                         ))
                                     )}
                                 </div>
                             </div>
 
-                            {/* 2. 每筆花費明細 (包含參與人) */}
+                            {/* 每一筆費用的詳細內容 */}
                             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
                                 <h2 className="font-black text-lg text-slate-800 mb-6 flex items-center gap-2">
-                                    <i data-lucide="clipboard-list" class="text-indigo-500 w-5 h-5"></i> 消費明細與參與人
+                                    <i data-lucide="scroll-text" class="text-violet-500"></i> 費用明細紀錄
                                 </h2>
                                 <div class="space-y-4">
                                     {expenses.map((e, idx) => (
                                         <div key={idx} className="p-5 bg-slate-50 rounded-3xl border border-slate-200">
-                                            <div className="flex justify-between items-center mb-3">
-                                                <span className="font-black text-slate-800 text-lg underline decoration-indigo-300 underline-offset-4">{e.name}</span>
-                                                <span className="font-black text-indigo-600 text-xl">${e.amount}</span>
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="font-black text-slate-800 text-lg border-b-2 border-violet-200">{e.name}</div>
+                                                <div className="font-black text-violet-600 text-xl">${e.amount}</div>
                                             </div>
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-[10px] font-bold px-2 py-1 bg-indigo-100 text-indigo-600 rounded-lg">付款人</span>
-                                                    <span className="font-bold text-slate-700">{e.payer}</span>
+                                            <div className="space-y-3 text-xs">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2 py-0.5 bg-violet-100 text-violet-600 rounded-md font-bold">付款人</span>
+                                                    <span className="font-bold text-slate-600">{e.payer}</span>
                                                 </div>
                                                 <div className="flex flex-col gap-2">
-                                                    <span className="text-[10px] font-bold px-2 py-1 bg-slate-200 text-slate-500 rounded-lg w-fit">分攤夥伴</span>
-                                                    <div className="flex flex-wrap gap-2 px-1">
+                                                    <span className="px-2 py-0.5 bg-slate-200 text-slate-500 rounded-md font-bold w-fit">分攤對象</span>
+                                                    <div className="flex flex-wrap gap-1.5">
                                                         {e.splitAmong.map(m => (
-                                                            <span key={m} className="bg-white border border-slate-200 px-3 py-1 rounded-xl text-xs font-bold text-slate-600 shadow-sm">
+                                                            <span key={m} className="bg-white border border-slate-200 px-3 py-1 rounded-full font-bold text-slate-500 shadow-sm">
                                                                 {m}
                                                             </span>
                                                         ))}
@@ -172,9 +171,14 @@
                                         </div>
                                     ))}
                                 </div>
+                                <div className="mt-8 pt-4 border-t border-dashed text-center">
+                                    <p className="text-[10px] text-slate-400 italic font-medium leading-relaxed">
+                                        * 此報表已根據您的規範生成：<br/>餘數由付款人吸收，並採轉帳次數最優化路徑。
+                                    </p>
+                                </div>
                             </div>
                             
-                            <button onClick={()=>window.location.reload()} className="w-full bg-slate-100 text-slate-400 py-5 rounded-3xl font-bold border-2 border-slate-200 transition-all hover:bg-slate-200 active:scale-95">清除所有資料重新開始</button>
+                            <button onClick={()=>window.location.reload()} className="w-full bg-slate-100 text-slate-400 py-5 rounded-3xl font-bold border-2 border-slate-200 transition-all hover:bg-slate-200 active:scale-95">重新開啟新結算</button>
                         </div>
                     )}
                 </div>
