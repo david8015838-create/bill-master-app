@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>團體帳務結算專家 - 完整明細版</title>
+    <title>團體帳務結算專家 - 明細增強版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -56,7 +56,7 @@
                     debtors[d].amount -= pay; creditors[c].amount -= pay;
                     if(debtors[d].amount < 1) d++; if(creditors[c].amount < 1) c++;
                 }
-                return { balances, plans };
+                return { plans };
             };
 
             const report = useMemo(calculate, [participants, expenses]);
@@ -65,30 +65,34 @@
                 <div className="max-w-md mx-auto min-h-screen p-4">
                     {step === 1 && (
                         <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border mt-10">
-                            <h2 className="text-2xl font-black mb-6 text-slate-800">👥 成員名單</h2>
+                            <h2 className="text-2xl font-black mb-6 text-slate-800">👥 設定成員</h2>
                             <div className="flex gap-2 mb-6">
-                                <input value={newName} onChange={e => setNewName(e.target.value)} onKeyPress={e => e.key === 'Enter' && (newName && setParticipants([...participants,{id:Date.now(),name:newName}], setNewName('')))} className="flex-1 bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-500" placeholder="夥伴姓名..." />
+                                <input value={newName} onChange={e => setNewName(e.target.value)} onKeyPress={e => e.key === 'Enter' && (newName && setParticipants([...participants,{id:Date.now(),name:newName}], setNewName('')))} className="flex-1 bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-500" placeholder="姓名..." />
                                 <button onClick={() => {if(newName){setParticipants([...participants,{id:Date.now(),name:newName}]);setNewName('');}}} className="bg-blue-600 text-white px-6 rounded-2xl font-bold">新增</button>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                {participants.map(p => <div key={p.id} className="bg-slate-50 p-3 rounded-xl border flex justify-between font-bold text-slate-600"><span>{p.name}</span><button onClick={()=>setParticipants(participants.filter(x=>x.id!==p.id))} class="text-red-300">×</button></div>)}
+                                {participants.map(p => <div key={p.id} className="bg-slate-50 p-3 rounded-xl border flex justify-between font-bold text-slate-600"><span>{p.name}</span><button onClick={()=>setParticipants(participants.filter(x=>x.id!==p.id))} class="text-red-300 px-1">×</button></div>)}
                             </div>
-                            {participants.length >= 2 && <button onClick={()=>{setStep(2);setSelected(participants.map(p=>p.name))}} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold mt-8 shadow-lg">下一步：輸入消費</button>}
+                            {participants.length >= 2 && <button onClick={()=>{setStep(2);setSelected(participants.map(p=>p.name))}} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold mt-8 shadow-lg">開始記帳</button>}
                         </div>
                     )}
 
                     {step === 2 && (
                         <div className="space-y-4 pt-6">
                             <div className="bg-white p-6 rounded-[2rem] shadow-xl border space-y-4">
-                                <h2 className="font-black text-xl text-slate-800 italic underline decoration-blue-500">輸入消費項目</h2>
-                                <input id="n" placeholder="項目名稱 (如：晚餐)" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none" />
+                                <h2 className="font-black text-xl text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="plus-circle" class="text-blue-500"></i> 新增支出
+                                </h2>
+                                <input id="n" placeholder="項目名稱" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none" />
                                 <input id="a" type="number" placeholder="金額" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none" />
-                                <div class="text-xs font-bold text-slate-400 ml-2 uppercase tracking-widest">誰付錢？</div>
-                                <select id="p" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none appearance-none font-bold text-blue-600">
+                                
+                                <div class="text-[10px] font-bold text-slate-400 ml-2 tracking-widest">付款人</div>
+                                <select id="p" className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 outline-none font-bold text-blue-600">
                                     {participants.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                                 </select>
-                                <div class="text-xs font-bold text-slate-400 ml-2 uppercase tracking-widest">誰要分攤？(勾選)</div>
-                                <div className="grid grid-cols-2 gap-2 p-4 bg-slate-50 rounded-2xl border">
+
+                                <div class="text-[10px] font-bold text-slate-400 ml-2 tracking-widest">參與成員 (勾選)</div>
+                                <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl border">
                                     {participants.map(p => (
                                         <label key={p.id} className={`flex items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${selected.includes(p.name) ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-400'}`}>
                                             <input type="checkbox" class="hidden" checked={selected.includes(p.name)} onChange={() => selected.includes(p.name)?setSelected(selected.filter(x=>x!==p.name)):setSelected([...selected,p.name])} />
@@ -102,73 +106,78 @@
                                         setExpenses([...expenses,{id:Date.now(),name:n.value,amount:parseInt(a.value),payer:p.value,splitAmong:[...selected]}]);
                                         n.value=''; a.value=''; setSelected(participants.map(x=>x.name));
                                     }
-                                }} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200">+ 加入此筆</button>
+                                }} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-100">+ 加入清單</button>
                             </div>
-                            {expenses.map(e => <div key={e.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center"><div class="text-sm font-bold">{e.name}</div><b class="text-blue-600">${e.amount}</b></div>)}
-                            <button onClick={()=>setStep(3)} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold shadow-2xl mt-4">查看最終結算報告</button>
+
+                            {expenses.length > 0 && (
+                                <div className="space-y-2">
+                                    <p class="text-xs font-bold text-slate-400 ml-4">目前已輸入：</p>
+                                    {expenses.map(e => <div key={e.id} className="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm"><div><div class="font-bold text-slate-700">{e.name}</div><div class="text-[10px] text-slate-400">{e.payer} 付款</div></div><b class="text-blue-600">${e.amount}</b></div>)}
+                                </div>
+                            )}
+
+                            <button onClick={()=>setStep(3)} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold shadow-2xl mt-4">結算並查看明細</button>
                         </div>
                     )}
 
                     {step === 3 && (
                         <div className="space-y-6 pt-6 pb-20 animate-in fade-in duration-500">
-                            {/* 1. 消費明細表 */}
+                            {/* 最終撥款行動 - 移到最上方，最直觀 */}
                             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border">
                                 <h2 className="text-center font-black text-xl text-slate-800 mb-6 flex items-center justify-center gap-2">
-                                    <i data-lucide="list-checks" class="text-blue-500"></i> 📜 消費明細清單
+                                    <i data-lucide="send" class="text-blue-500 w-5 h-5"></i> 撥款行動清單
+                                </h2>
+                                <div class="space-y-4">
+                                    {report.plans.length === 0 ? (
+                                        <p className="text-center text-slate-400 py-6">帳目完美抵銷，無需轉帳！</p>
+                                    ) : (
+                                        report.plans.map((p,i) => (
+                                            <div key={i} className="bg-slate-900 p-5 rounded-3xl flex items-center justify-between text-white shadow-xl">
+                                                <div class="text-center flex-1"><div class="text-[8px] text-slate-400 mb-1">PAYER</div><span class="font-bold text-red-400">{p.from}</span></div>
+                                                <div class="flex flex-col items-center flex-1">
+                                                    <span class="bg-white text-slate-900 px-4 py-1 rounded-xl font-black text-xl">${p.amount}</span>
+                                                    <i data-lucide="chevrons-right" class="w-4 h-4 text-slate-600"></i>
+                                                </div>
+                                                <div class="text-center flex-1"><div class="text-[8px] text-slate-400 mb-1">RECEIVER</div><span class="font-bold text-green-400">{p.to}</span></div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 消費明細與參與人 */}
+                            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border">
+                                <h2 className="text-center font-black text-lg text-slate-800 mb-6 flex items-center justify-center gap-2">
+                                    <i data-lucide="file-text" class="text-blue-500 w-5 h-5"></i> 每筆花費明細
                                 </h2>
                                 <div class="space-y-4">
                                     {expenses.map((e, idx) => (
-                                        <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="font-black text-slate-800 text-lg">{e.name}</span>
-                                                <span className="bg-white px-3 py-1 rounded-lg shadow-sm font-mono font-bold text-blue-600">${e.amount}</span>
+                                        <div key={idx} className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="font-black text-slate-800">{e.name}</span>
+                                                <span className="font-mono font-black text-blue-600 text-lg">${e.amount}</span>
                                             </div>
-                                            <div className="text-xs space-y-1">
-                                                <div className="flex gap-2 text-slate-500">
-                                                    <span className="font-bold">付款人:</span>
-                                                    <span className="text-blue-500">{e.payer}</span>
+                                            <div className="grid grid-cols-1 gap-2 text-xs">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-md font-bold">付款者</span>
+                                                    <span className="font-bold text-slate-600">{e.payer}</span>
                                                 </div>
-                                                <div className="flex flex-wrap gap-1 text-slate-500">
-                                                    <span className="font-bold">參與分攤:</span>
-                                                    {e.splitAmong.map(m => <span key={m} className="bg-slate-200 px-2 py-0.5 rounded-md text-[10px]">{m}</span>)}
+                                                <div className="flex items-start gap-2">
+                                                    <span className="px-2 py-0.5 bg-slate-200 text-slate-500 rounded-md font-bold">參與人</span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {e.splitAmong.map(m => <span key={m} className="bg-white border px-2 py-0.5 rounded-md text-slate-700">{m}</span>)}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-
-                            {/* 2. 個人盈虧表 */}
-                            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border">
-                                <h2 className="text-center font-black text-xl text-slate-800 mb-6">📊 個人盈虧表</h2>
-                                <div class="space-y-3">
-                                    {Object.entries(report.balances).map(([name, bal]) => (
-                                        <div key={name} className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
-                                            <span class="font-bold text-slate-600">{name}</span>
-                                            <span className={`font-black ${bal>=0?'text-green-600':'text-red-500'}`}>{bal>=0?`+$${bal} (收)`:`-$${Math.abs(bal)} (付)`}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* 3. 撥款行動 */}
-                            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border">
-                                <h2 className="text-center font-black text-xl text-slate-800 mb-6 uppercase tracking-tighter">💸 最終撥款行動</h2>
-                                <div class="space-y-4">
-                                    {report.plans.map((p,i) => (
-                                        <div key={i} className="bg-blue-600 p-5 rounded-3xl flex items-center justify-between text-white shadow-lg shadow-blue-100">
-                                            <span class="font-black text-lg">{p.from}</span>
-                                            <div class="flex flex-col items-center">
-                                                <span class="bg-white text-blue-600 px-4 py-1 rounded-xl font-black text-xl shadow-inner">${p.amount}</span>
-                                                <i data-lucide="arrow-right" class="w-4 h-4 text-blue-200 mt-1"></i>
-                                            </div>
-                                            <span class="font-black text-lg">{p.to}</span>
-                                        </div>
-                                    ))}
+                                <div className="mt-6 p-4 bg-slate-100 rounded-xl text-[10px] text-slate-400 italic text-center leading-relaxed">
+                                    * 計算規則：每筆餘數由付款人吸收。已透過最優化演算法簡化轉帳次數。
                                 </div>
                             </div>
                             
-                            <button onClick={()=>window.location.reload()} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold shadow-2xl">重新開始新帳目</button>
+                            <button onClick={()=>window.location.reload()} className="w-full bg-white border-2 border-slate-200 text-slate-400 py-5 rounded-3xl font-bold hover:bg-slate-50">重新開始</button>
                         </div>
                     )}
                 </div>
