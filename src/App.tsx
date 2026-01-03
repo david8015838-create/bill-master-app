@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AppStep, Expense, Participant } from './types';
-import StepParticipants from './components/StepParticipants';
-import StepExpenses from './components/StepExpenses';
-import StepSettlement from './components/StepSettlement';
+import { AppStep, Expense, Participant } from './types.ts';
+import StepParticipants from './components/StepParticipants.tsx';
+import StepExpenses from './components/StepExpenses.tsx';
+import StepSettlement from './components/StepSettlement.tsx';
 
 const App: React.FC = () => {
   const [step, setStep] = useState<AppStep>(AppStep.PARTICIPANTS);
@@ -22,7 +22,7 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-200">
+            <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
               ¥
             </div>
             <h1 className="font-bold text-xl tracking-tight text-slate-800">分帳大師</h1>
@@ -31,9 +31,9 @@ const App: React.FC = () => {
           <div className="flex gap-1">
             {[AppStep.PARTICIPANTS, AppStep.EXPENSES, AppStep.SETTLEMENT].map((s, i) => (
               <div 
-                key={s} 
-                className={`h-2 w-8 rounded-full transition-colors ${
-                  Object.values(AppStep).indexOf(step) >= i ? 'bg-blue-600' : 'bg-slate-200'
+                key={s}
+                className={`w-2 h-2 rounded-full ${
+                  step === s ? 'bg-blue-600' : 'bg-slate-200'
                 }`}
               />
             ))}
@@ -49,7 +49,7 @@ const App: React.FC = () => {
             onNext={() => setStep(AppStep.EXPENSES)}
           />
         )}
-        
+
         {step === AppStep.EXPENSES && (
           <StepExpenses
             participants={participants}
@@ -64,28 +64,15 @@ const App: React.FC = () => {
           <StepSettlement
             participants={participants}
             expenses={expenses}
-            onReset={handleReset}
             onBack={() => setStep(AppStep.EXPENSES)}
+            onReset={handleReset}
           />
         )}
       </main>
 
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes scale-in {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out forwards;
-        }
-        .animate-scale-in {
-          animation: scale-in 0.2s ease-out forwards;
-        }
-      `}</style>
+      <footer className="py-8 text-center text-slate-400 text-sm">
+        <p>© 2024 分帳大師 · 智能分帳助手</p>
+      </footer>
     </div>
   );
 };
